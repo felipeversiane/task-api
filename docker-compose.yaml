@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: pg02
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Pass23982
+      POSTGRES_DB: postgres
+    build:
+      context: .
+      dockerfile: build/db/Dockerfile
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - golangnetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d postgres -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: '0.4GB'
+
+  migrate:
+    image: migrate/migrate
+    container_name: mg02
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", 
+      "postgres://postgres:Pass23982@db:5432/postgres?sslmode=disable",
+      "up"
+    ]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - golangnetwork
+
+  cache:
+    container_name: rd02
+    image: redis:latest
+    command: redis-server --save "" --appendonly no
+    environment:
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+    ports:
+      - "6379:6379"
+    networks:
+      - golangnetwork
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.5GB'
+
+  api:
+    build:
+      context: .
+      dockerfile: build/api/Dockerfile
+    image: app
+    container_name: go02
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      GIN_MODE: release
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Pass23982
+      POSTGRES_DB: postgres
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - migrate
+      - cache
+    networks:
+      - golangnetwork
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.1GB'
+
+
+volumes:
+  local_postgres_data: {}
+
+networks:
+  golangnetwork:
