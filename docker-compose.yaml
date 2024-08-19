@@ -74,7 +74,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8000
-      GIN_MODE: release
+      LOG_LEVEL: info
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
