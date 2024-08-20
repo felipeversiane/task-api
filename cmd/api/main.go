@@ -23,20 +23,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	slog.Info("Configuring database")
 	if err := database.Connect(ctx); err != nil {
 		panic(err)
 	}
 	defer database.Close()
-	slog.Info("Successfully configured database")
 
-	slog.Info("Configuring cache")
 	if err := cache.Connect(); err != nil {
 		panic(err)
 	}
-	slog.Info("Successfully configured cache")
 
-	slog.Info("Running server")
 	mux := http.NewServeMux()
 	routes.SetupRoutes(mux)
 
