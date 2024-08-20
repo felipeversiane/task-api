@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"github.com/felipeversiane/task-api/internal/cache"
 	"github.com/felipeversiane/task-api/internal/database"
 	"github.com/felipeversiane/task-api/internal/log"
+	"github.com/felipeversiane/task-api/internal/routes"
 )
 
 var (
@@ -16,9 +18,7 @@ var (
 )
 
 func main() {
-	slog.Info("Configuring logs")
 	log.Configure()
-	slog.Info("Successfully configured logs")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -36,7 +36,10 @@ func main() {
 	}
 	slog.Info("Successfully configured cache")
 
-	slog.Info("Running API")
-	go http.ListenAndServe(port, nil)
+	slog.Info("Running server")
+	mux := http.NewServeMux()
+	routes.SetupRoutes(mux)
 
+	slog.Info(fmt.Sprintf("Server running on port : %s", port))
+	http.ListenAndServe(":"+port, mux)
 }
