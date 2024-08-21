@@ -34,7 +34,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	routes.SetupRoutes(mux)
+	handler := log.LogMiddleware(mux)
 
 	slog.Info(fmt.Sprintf("Server running on port : %s", port))
-	http.ListenAndServe(":"+port, mux)
+	http.ListenAndServe(":"+port, handler)
 }

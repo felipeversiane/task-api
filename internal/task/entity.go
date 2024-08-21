@@ -30,33 +30,6 @@ type TaskResponse struct {
 	UpdatedAt   time.Time        `json:"updated_at"`
 }
 
-func RequestToDomainTask(req TaskRequest) domain.Task {
-	return domain.NewTask(
-		req.Name,
-		req.Description,
-		req.Situation,
-	)
-}
-
-func RequestToUpdateDomainTask(req UpdateTaskRequest) domain.Task {
-	return domain.NewUpdateTask(
-		req.Name,
-		req.Description,
-		req.Situation,
-	)
-}
-
-func DomainToResponseTask(domain domain.Task) TaskResponse {
-	return TaskResponse{
-		ID:          domain.ID,
-		Name:        domain.Name,
-		Description: domain.Description,
-		Situation:   domain.Situation,
-		CreatedAt:   domain.CreatedAt,
-		UpdatedAt:   domain.UpdatedAt,
-	}
-}
-
 func (req *TaskRequest) Validate() error {
 	var missingFields []string
 	if req.Name == "" {
@@ -91,4 +64,31 @@ func (req *UpdateTaskRequest) Validate() error {
 		return fmt.Errorf("missing required fields: %s", strings.Join(missingFields, ", "))
 	}
 	return nil
+}
+
+func RequestToDomainTask(req TaskRequest) domain.Task {
+	return domain.NewTask(
+		req.Name,
+		req.Description,
+		req.Situation,
+	)
+}
+
+func RequestToUpdateDomainTask(req UpdateTaskRequest) domain.Task {
+	return domain.NewUpdateTask(
+		req.Name,
+		req.Description,
+		req.Situation,
+	)
+}
+
+func DomainToResponseTask(domain domain.Task) TaskResponse {
+	return TaskResponse{
+		ID:          domain.ID,
+		Name:        domain.Name,
+		Description: domain.Description,
+		Situation:   domain.Situation,
+		CreatedAt:   domain.CreatedAt,
+		UpdatedAt:   domain.UpdatedAt,
+	}
 }
