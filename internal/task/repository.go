@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	domain "github.com/felipeversiane/task-api/internal"
@@ -28,6 +29,7 @@ func NewTaskRepository(database *pgxpool.Pool, cache *redis.Client) TaskReposito
 
 func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskResponse, error) {
 	nameKey := fmt.Sprintf("task:name:%s", task.Name)
+
 	if v, err := r.Cache.Get(ctx, nameKey).Result(); err == nil && v != "" {
 		return nil, fmt.Errorf("task with name %s already exists", task.Name)
 	}
@@ -41,7 +43,15 @@ func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskRes
 		task.ID, task.Name, task.Description, task.Situation, task.CreatedAt, task.UpdatedAt).
 		Scan(&taskResponse.ID, &taskResponse.Name, &taskResponse.Description,
 			&taskResponse.Situation, &taskResponse.CreatedAt, &taskResponse.UpdatedAt)
+
 	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") {
+			_, cacheErr := r.Cache.Set(ctx, nameKey, task.ID.String(), 24*time.Hour).Result()
+			if cacheErr != nil {
+				slog.Error(fmt.Sprintf("Failed to cache task: %v", cacheErr))
+			}
+			return nil, fmt.Errorf("task with name %s already exists", task.Name)
+		}
 		return nil, err
 	}
 
@@ -49,7 +59,6 @@ func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskRes
 	if err != nil {
 		return nil, err
 	}
-
 	_, err = r.Cache.Set(ctx, taskResponse.ID.String(), taskJSON, 24*time.Hour).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to cache task: %v", err))
@@ -57,7 +66,7 @@ func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskRes
 
 	_, err = r.Cache.Set(ctx, nameKey, taskResponse.ID.String(), 24*time.Hour).Result()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to cache task: %v", err))
+		slog.Error(fmt.Sprintf("Failed to cache task name: %v", err))
 	}
 
 	return &taskResponse, nil
@@ -65,6 +74,7 @@ func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskRes
 
 func (r *TaskRepository) Update(ctx context.Context, id uuid.UUID, domain domain.Task) (*TaskResponse, error) {
 	nameKey := fmt.Sprintf("task:name:%s", domain.Name)
+
 	existingID, err := r.Cache.Get(ctx, nameKey).Result()
 	if err == nil && existingID != "" && existingID != id.String() {
 		return nil, fmt.Errorf("task with name %s already exists", domain.Name)
@@ -78,7 +88,15 @@ func (r *TaskRepository) Update(ctx context.Context, id uuid.UUID, domain domain
 	err = r.Database.QueryRow(ctx, query, domain.Name, domain.Description, domain.Situation, domain.UpdatedAt, id).
 		Scan(&taskResponse.ID, &taskResponse.Name, &taskResponse.Description, &taskResponse.Situation,
 			&taskResponse.CreatedAt, &taskResponse.UpdatedAt)
+
 	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") {
+			_, cacheErr := r.Cache.Set(ctx, nameKey, id.String(), 24*time.Hour).Result()
+			if cacheErr != nil {
+				slog.Error(fmt.Sprintf("Failed to cache task existence: %v", cacheErr))
+			}
+			return nil, fmt.Errorf("task with name %s already exists", domain.Name)
+		}
 		return nil, err
 	}
 

@@ -1,6 +1,8 @@
 package task
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	domain "github.com/felipeversiane/task-api/internal"
@@ -53,4 +55,40 @@ func DomainToResponseTask(domain domain.Task) TaskResponse {
 		CreatedAt:   domain.CreatedAt,
 		UpdatedAt:   domain.UpdatedAt,
 	}
+}
+
+func (req *TaskRequest) Validate() error {
+	var missingFields []string
+	if req.Name == "" {
+		missingFields = append(missingFields, "name")
+	}
+	if req.Description == "" {
+		missingFields = append(missingFields, "description")
+	}
+	if req.Situation == "" {
+		missingFields = append(missingFields, "situation")
+	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("missing required fields: %s", strings.Join(missingFields, ", "))
+	}
+	return nil
+}
+
+func (req *UpdateTaskRequest) Validate() error {
+	var missingFields []string
+	if req.Name == "" {
+		missingFields = append(missingFields, "name")
+	}
+	if req.Description == "" {
+		missingFields = append(missingFields, "description")
+	}
+	if req.Situation == "" {
+		missingFields = append(missingFields, "situation")
+	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("missing required fields: %s", strings.Join(missingFields, ", "))
+	}
+	return nil
 }
