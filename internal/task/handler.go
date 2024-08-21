@@ -26,12 +26,6 @@ func (h *TaskHandler) PostTask(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-
-	if err := req.Validate(); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	resp, err := h.Service.CreateTask(ctx, req)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
@@ -53,11 +47,6 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	var req UpdateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-
-	if err := req.Validate(); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

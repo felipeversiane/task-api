@@ -17,6 +17,10 @@ func NewTaskService(repository TaskRepository) TaskService {
 }
 
 func (s *TaskService) CreateTask(ctx context.Context, req TaskRequest) (*TaskResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
 	domain := RequestToDomainTask(req)
 	if err := domain.ValidateFields(); err != nil {
 		return nil, err
@@ -29,6 +33,9 @@ func (s *TaskService) CreateTask(ctx context.Context, req TaskRequest) (*TaskRes
 }
 
 func (s *TaskService) UpdateTask(ctx context.Context, id uuid.UUID, req UpdateTaskRequest) (*TaskResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
 	domain := RequestToUpdateDomainTask(req)
 	if err := domain.ValidateFields(); err != nil {
 		return nil, err
