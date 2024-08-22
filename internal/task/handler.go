@@ -26,7 +26,17 @@ func (h *TaskHandler) PostTask(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	resp, err := h.Service.CreateTask(ctx, req)
+
+	if err := req.Validate(); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	domain := RequestToDomainTask(req)
+	if err := domain.ValidateFields(); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	resp, err := h.Service.CreateTask(ctx, domain)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -50,7 +60,16 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.Service.UpdateTask(ctx, id, req)
+	if err := req.Validate(); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	domain := RequestToUpdateDomainTask(req)
+	if err := domain.ValidateFields(); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+	}
+
+	resp, err := h.Service.UpdateTask(ctx, id, domain)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
