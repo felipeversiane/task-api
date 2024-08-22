@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	domain "github.com/felipeversiane/task-api/internal"
+	"github.com/felipeversiane/task-api/internal/rest"
 	"github.com/google/uuid"
 )
 
@@ -17,7 +17,17 @@ func NewTaskService(repository TaskRepository) TaskService {
 	}
 }
 
-func (s *TaskService) CreateTask(ctx context.Context, domain domain.Task) (*TaskResponse, error) {
+func (s *TaskService) CreateTask(ctx context.Context, req TaskRequest) (*TaskResponse, *rest.RestError) {
+
+	if err := req.Validate(); err != nil {
+		return nil, rest.NewBadRequestError(err.Error())
+	}
+
+	domain := RequestToDomainTask(req)
+	if err := domain.ValidateFields(); err != nil {
+		return nil, rest.NewBadRequestError(err.Error())
+	}
+
 	task, err := s.Repository.Insert(ctx, domain)
 	if err != nil {
 		return nil, err
@@ -25,7 +35,17 @@ func (s *TaskService) CreateTask(ctx context.Context, domain domain.Task) (*Task
 	return task, nil
 }
 
-func (s *TaskService) UpdateTask(ctx context.Context, id uuid.UUID, domain domain.Task) (*TaskResponse, error) {
+func (s *TaskService) UpdateTask(ctx context.Context, id uuid.UUID, req UpdateTaskRequest) (*TaskResponse, *rest.RestError) {
+
+	if err := req.Validate(); err != nil {
+		rest.NewBadRequestError(err.Error())
+	}
+
+	domain := RequestToUpdateDomainTask(req)
+	if err := domain.ValidateFields(); err != nil {
+		rest.NewBadRequestError(err.Error())
+	}
+
 	task, err := s.Repository.Update(ctx, id, domain)
 	if err != nil {
 		return nil, err
@@ -33,7 +53,7 @@ func (s *TaskService) UpdateTask(ctx context.Context, id uuid.UUID, domain domai
 	return task, nil
 }
 
-func (s *TaskService) DeleteTask(ctx context.Context, id uuid.UUID) error {
+func (s *TaskService) DeleteTask(ctx context.Context, id uuid.UUID) *rest.RestError {
 	_, err := s.Repository.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -41,7 +61,7 @@ func (s *TaskService) DeleteTask(ctx context.Context, id uuid.UUID) error {
 	return s.Repository.Delete(ctx, id)
 }
 
-func (s *TaskService) GetTaskByID(ctx context.Context, id uuid.UUID) (*TaskResponse, error) {
+func (s *TaskService) GetTaskByID(ctx context.Context, id uuid.UUID) (*TaskResponse, *rest.RestError) {
 	task, err := s.Repository.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -49,7 +69,7 @@ func (s *TaskService) GetTaskByID(ctx context.Context, id uuid.UUID) (*TaskRespo
 	return task, nil
 }
 
-func (s *TaskService) GetAllTasks(ctx context.Context) ([]TaskResponse, error) {
+func (s *TaskService) GetAllTasks(ctx context.Context) ([]TaskResponse, *rest.RestError) {
 	tasks, err := s.Repository.GetAll(ctx)
 	if err != nil {
 		return nil, err
