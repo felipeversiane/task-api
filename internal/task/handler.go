@@ -24,16 +24,14 @@ func (h *TaskHandler) PostTask(w http.ResponseWriter, r *http.Request) {
 
 	var req TaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpErr := rest.NewBadRequestError("Invalid request payload")
-		w.WriteHeader(httpErr.Code)
-		w.Write([]byte(httpErr.Error()))
+		httpErr := rest.NewBadRequestError("invalid request payload")
+		respondWithJSON(w, httpErr.Code, httpErr)
 		return
 	}
 
 	resp, err := h.Service.CreateTask(ctx, req)
 	if err != nil {
-		w.WriteHeader(err.Code)
-		w.Write([]byte(err.Error()))
+		respondWithJSON(w, err.Code, err)
 		return
 	}
 
@@ -45,24 +43,21 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	id, parseErr := extractIDFromPath(r.URL.Path)
 	if parseErr != nil {
-		httpErr := rest.NewBadRequestError("Invalid task ID")
-		w.WriteHeader(httpErr.Code)
-		w.Write([]byte(httpErr.Error()))
+		httpErr := rest.NewBadRequestError("invalid task ID")
+		respondWithJSON(w, httpErr.Code, httpErr)
 		return
 	}
 
 	var req UpdateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpErr := rest.NewBadRequestError("Invalid request payload")
-		w.WriteHeader(httpErr.Code)
-		w.Write([]byte(httpErr.Error()))
+		httpErr := rest.NewBadRequestError("invalid request payload")
+		respondWithJSON(w, httpErr.Code, httpErr)
 		return
 	}
 
 	resp, err := h.Service.UpdateTask(ctx, id, req)
 	if err != nil {
-		w.WriteHeader(err.Code)
-		w.Write([]byte(err.Error()))
+		respondWithJSON(w, err.Code, err)
 		return
 	}
 
@@ -74,15 +69,13 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	id, parseErr := extractIDFromPath(r.URL.Path)
 	if parseErr != nil {
-		httpErr := rest.NewBadRequestError("Invalid task ID")
-		w.WriteHeader(httpErr.Code)
-		w.Write([]byte(httpErr.Error()))
+		httpErr := rest.NewBadRequestError("invalid task ID")
+		respondWithJSON(w, httpErr.Code, httpErr)
 		return
 	}
 
 	if err := h.Service.DeleteTask(ctx, id); err != nil {
-		w.WriteHeader(err.Code)
-		w.Write([]byte(err.Error()))
+		respondWithJSON(w, err.Code, err)
 		return
 	}
 
@@ -94,16 +87,14 @@ func (h *TaskHandler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	id, parseErr := extractIDFromPath(r.URL.Path)
 	if parseErr != nil {
-		httpErr := rest.NewBadRequestError("Invalid task ID")
-		w.WriteHeader(httpErr.Code)
-		w.Write([]byte(httpErr.Error()))
+		httpErr := rest.NewBadRequestError("invalid task ID")
+		respondWithJSON(w, httpErr.Code, httpErr)
 		return
 	}
 
 	resp, err := h.Service.GetTaskByID(ctx, id)
 	if err != nil {
-		w.WriteHeader(err.Code)
-		w.Write([]byte(err.Error()))
+		respondWithJSON(w, err.Code, err)
 		return
 	}
 
@@ -115,8 +106,7 @@ func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.Service.GetAllTasks(ctx)
 	if err != nil {
-		w.WriteHeader(err.Code)
-		w.Write([]byte(err.Error()))
+		respondWithJSON(w, err.Code, err)
 		return
 	}
 
