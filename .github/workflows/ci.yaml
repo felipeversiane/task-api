@@ -22,3 +22,35 @@ jobs:
 
       - name: Build
         run: go build -v ./...
+
+  test:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker Compose
+        run: docker-compose up -d --build --no-cache
+
+      - name: Run project
+        run: make ci
+
+      - name: Set up Go for E2E tests
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+
+      - name: Run E2E tests
+        run: go test -v ./e2e/...
+
+      - name: Get Docker Compose status
+        if: failure()
+        run: docker-compose -f docker-compose.ci.yml ps
+
+      - name: Get Docker Compose logs
+        if: failure()
+        run: docker-compose -f docker-compose.ci.yml logs
+
+      - name: Tear Down
+        if: always()
+        run: docker-compose -f docker-compose.ci.yml down
