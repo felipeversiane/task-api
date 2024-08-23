@@ -97,6 +97,18 @@ services:
           cpus: '0.1'
           memory: '0.1GB'
 
+  nginx:
+    image: nginx:latest
+    container_name: nx02
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api
+    networks:
+      - golangnetwork
+
 
 volumes:
   local_postgres_data: {}
