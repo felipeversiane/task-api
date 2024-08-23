@@ -47,10 +47,6 @@ func (r *TaskRepository) Insert(ctx context.Context, task domain.Task) (*TaskRes
 
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
-			_, cacheErr := r.Cache.Set(ctx, nameKey, task.ID.String(), 24*time.Hour).Result()
-			if cacheErr != nil {
-				slog.Error(fmt.Sprintf("Failed to cache task: %v", cacheErr))
-			}
 			return nil, rest.NewBadRequestError(fmt.Sprintf("task with name %s already exists", task.Name))
 		}
 		return nil, rest.NewInternalServerError(fmt.Sprintf("%s", err))
@@ -92,10 +88,6 @@ func (r *TaskRepository) Update(ctx context.Context, id uuid.UUID, task domain.T
 
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") {
-			_, cacheErr := r.Cache.Set(ctx, nameKey, id.String(), 24*time.Hour).Result()
-			if cacheErr != nil {
-				slog.Error(fmt.Sprintf("Failed to cache task existence: %v", cacheErr))
-			}
 			return nil, rest.NewBadRequestError(fmt.Sprintf("task with name %s already exists", task.Name))
 		}
 		return nil, rest.NewInternalServerError(fmt.Sprintf("%s", err))
@@ -119,15 +111,28 @@ func (r *TaskRepository) Update(ctx context.Context, id uuid.UUID, task domain.T
 }
 
 func (r *TaskRepository) Delete(ctx context.Context, id uuid.UUID) *rest.RestError {
-	_, err := r.Cache.Del(ctx, id.String()).Result()
+	taskJSON, err := r.Cache.Get(ctx, id.String()).Result()
 	if err != nil {
+		return rest.NewNotFoundError(fmt.Sprintf("task with ID %s not found", id))
+	}
+
+	var task TaskResponse
+	if err := json.Unmarshal([]byte(taskJSON), &task); err != nil {
+		return rest.NewInternalServerError(fmt.Sprintf("Failed to unmarshal task: %s", err))
+	}
+
+	if _, err := r.Cache.Del(ctx, id.String()).Result(); err != nil {
 		slog.Error(fmt.Sprintf("Failed to delete task from cache: %v", err))
+	}
+
+	nameKey := fmt.Sprintf("task:name:%s", task.Name)
+	if _, err := r.Cache.Del(ctx, nameKey).Result(); err != nil {
+		slog.Error(fmt.Sprintf("Failed to delete task name from cache: %v", err))
 	}
 
 	query := `DELETE FROM tasks WHERE id = $1 RETURNING id`
 	var deletedID uuid.UUID
-	err = r.Database.QueryRow(ctx, query, id).Scan(&deletedID)
-	if err != nil {
+	if err := r.Database.QueryRow(ctx, query, id).Scan(&deletedID); err != nil {
 		if err == pgx.ErrNoRows {
 			return rest.NewNotFoundError(fmt.Sprintf("task with ID %s not found", id))
 		}
