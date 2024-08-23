@@ -15,7 +15,7 @@ type ApiClient struct {
 
 func NewApiClient() ApiClient {
 	return ApiClient{
-		baseUrl: "http://localhost:8000/api/v1",
+		baseUrl: "http://localhost:80/api/v1",
 	}
 }
 
