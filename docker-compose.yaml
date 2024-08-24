@@ -27,8 +27,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: '0.4GB'
+          cpus: '1.0'
+          memory: '1GB'
 
   migrate:
     image: migrate/migrate
@@ -62,7 +62,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.1'
+          cpus: '0.3'
           memory: '0.5GB'
 
   api:
@@ -88,8 +88,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.1'
-          memory: '0.1GB'
+          cpus: '0.3'
+          memory: '0.15GB'
 
   nginx:
     image: nginx:latest
