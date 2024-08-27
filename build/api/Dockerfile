@@ -1,17 +1,20 @@
-FROM golang:1.22-alpine3.20 as builder
+FROM golang:1.22-alpine3.20 AS builder
+
+RUN apk add --no-cache upx
 
 WORKDIR /app
 
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-RUN go get -d -v ./...
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/api ./cmd/api/main.go
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api ./cmd/api/main.go
+RUN upx --ultra-brute -qq /app/api && upx -t /app/api
 
 FROM scratch
 
-WORKDIR /
+COPY --from=builder /app/api /api
 
-COPY --from=builder /app/api ./
-
-ENTRYPOINT ["./api"]
+ENTRYPOINT ["/api"]
