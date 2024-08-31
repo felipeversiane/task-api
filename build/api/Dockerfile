@@ -18,3 +18,4 @@ FROM scratch
 COPY --from=builder /app/api /api
 
 ENTRYPOINT ["/api"]
+
