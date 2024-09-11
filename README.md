@@ -3,7 +3,7 @@ API responsible for creating and managing tasks.
 
 ## Introduction
 
-The API itself is for study purposes, and aims to be a simple API for crud and task management, using Docker, Redis and working in concurrency with goroutines.
+The API itself is for study purposes, and aims to be a simple API for crud and task management, using Docker and Redis for more perfomatic queries.
 
 ## 🛠 Main libraries used
 
